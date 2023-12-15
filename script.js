@@ -4,16 +4,17 @@ const ctx = canvas.getContext('2d');
 // Player object
 const player = {
     x: canvas.width / 2 - 25, // Centered horizontally
-    y: canvas.height / 2 - 25, // Centered vertically
+    y: canvas.height - 50,    // Positioned at the bottom of the canvas
     width: 50,
     height: 50,
     color: '#FF0000',
     speed: 5,
 };
-
 // Enemy array
 const enemies = [];
-
+// Game variables
+let gameStarted = false;
+let gameOver = false;
 // Projectiles array
 const projectiles = [];
 
@@ -77,6 +78,7 @@ function updateEnemies() {
         }
         if (checkCollision(player, enemies[i])) {
             // Game over if player collides with an enemy
+            gameOver = true;
             alert('Game Over! Time: ' + getElapsedTimeInSeconds() + ' seconds. Kills: ' + killCounter);
             resetGame();
         }
@@ -109,6 +111,26 @@ function updateProjectiles() {
 }
 
 function gameLoop() {
+    if (!gameStarted) {
+        if (gameOver) {
+            // Display game-over message and prompt to play again
+            ctx.fillStyle = '#000';
+            ctx.font = '30px Arial';
+            ctx.fillText('Game Over', canvas.width / 2 - 80, canvas.height / 2 - 20);
+            ctx.fillText('Press Space Bar to Play Again', canvas.width / 2 - 220, canvas.height / 2 + 30);
+            enemies.length = 0;
+        } else {
+            // Display a message to prompt the player to press the space bar to start or restart the game
+            ctx.fillStyle = '#000';
+            ctx.font = '30px Arial';
+            ctx.fillText('Press Space Bar to Start', canvas.width / 2 - 150, canvas.height / 2);
+            enemies.length = 0;
+        }
+
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
     const elapsedTime = getElapsedTimeInSeconds();
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -162,7 +184,16 @@ function gameLoop() {
 const keysPressed = {};
 window.addEventListener('keydown', (e) => {
     keysPressed[e.key] = true;
+
+    // Check if the space bar is pressed to start or restart the game
+    if (!gameStarted && e.key === ' ') {
+        gameStarted = true;
+        startTime = new Date().getTime(); // Start the timer
+        gameOver = false; // Reset game over state
+        gameLoop(); // Start the game loop
+    }
 });
+
 window.addEventListener('keyup', (e) => {
     delete keysPressed[e.key];
 });
@@ -183,21 +214,25 @@ function checkCollision(obj1, obj2) {
 }
 
 function resetGame() {
-    // Reset player position
+    // Reset player position and game variables
     player.x = canvas.width / 2 - 25;
-    player.y = canvas.height / 2 - 25;
-
-    // Clear enemies and projectiles arrays
-    enemies.length = 0;
-    projectiles.length = 0;
-
-    // Reset timer and kill counter
+    player.y = canvas.height - 50;
+    gameStarted = false;
+    gameOver = false;
     startTime = new Date().getTime();
     killCounter = 0;
     keysPressed['ArrowUp'] = false;
     keysPressed['ArrowDown'] = false;
     keysPressed['ArrowLeft'] = false;
     keysPressed['ArrowRight'] = false;
+    lastProjectileTime = new Date().getTime(); // Reset last projectile time
+
+    // Reset difficulty variables
+    spawnInterval = 1000; // Initial spawn interval in milliseconds
+    enemyImageWidth = 30; // Initial enemy image width
+    enemyImageHeight = 40; // Initial enemy image height
+
+    drawEnemies(); // Redraw enemies after resetting variables
 }
 
 gameLoop();
